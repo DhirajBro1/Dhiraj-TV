@@ -10,10 +10,10 @@
       "hash": "9ef8345c0bd95d735125074b58f15100"
     },
     "index.html": {
-      "hash": "06db652da91718e8bbbe2ab88cc9d3f0"
+      "hash": "0ced8d96c287881e4e5b072655351271"
     },
     "js/main.js": {
-      "hash": "3843284374d37c2fa8c88efbfc34e1ab"
+      "hash": "b37ebd38d3812bb698ee770cac53eec5"
     },
     "README.md": {
       "hash": "c5f88ce60e93d11f2515a8759722ad00"
@@ -22,27 +22,39 @@
       "hash": "1ee4d69f00cf1eafebc5f6ea99cfd162"
     },
     "css/style.css": {
-      "hash": "83543b4f24b5c38d5e80524a6b87fb13"
+      "hash": "8859f533f80595febd0cebcdd3a8db08"
     },
     "playlists/index.country.m3u": {
       "hash": "1cdb3c2fbc98cf1fd8aa1f5ad92a11f7"
+    },
+    "images/donate.png": {
+      "hash": "6a2cc314b30a6cd9a9e1f7bcd62390e9"
+    },
+    ".gitignore": {
+      "hash": "1f1f49f68a73e1a409c8a7fd4e560a6a"
     }
   },
   "output": {
     "Debug/projects/TVapp/js/main.js": {
-      "hash": "3843284374d37c2fa8c88efbfc34e1ab"
+      "hash": "b37ebd38d3812bb698ee770cac53eec5"
     },
     "Debug/projects/TVapp/css/style.css": {
-      "hash": "83543b4f24b5c38d5e80524a6b87fb13"
+      "hash": "8859f533f80595febd0cebcdd3a8db08"
     },
     "Debug/projects/TVapp/config.xml": {
       "hash": "ac55f94e8745d4ff440cb09b6d043e6d"
     },
-    "Debug/projects/TVapp/index.html": {
-      "hash": "06db652da91718e8bbbe2ab88cc9d3f0"
-    },
     "Debug/projects/TVapp/README.md": {
       "hash": "c5f88ce60e93d11f2515a8759722ad00"
+    },
+    "Debug/projects/TVapp/.gitignore": {
+      "hash": "1f1f49f68a73e1a409c8a7fd4e560a6a"
+    },
+    "Debug/projects/TVapp/images/donate.png": {
+      "hash": "6a2cc314b30a6cd9a9e1f7bcd62390e9"
+    },
+    "Debug/projects/TVapp/index.html": {
+      "hash": "0ced8d96c287881e4e5b072655351271"
     }
   }
 }

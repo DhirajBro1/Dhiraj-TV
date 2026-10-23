@@ -1,7 +1,8 @@
-# TVapp
+# Dhiraj-TV
 
 A Samsung Smart TV app built with Tizen Studio that streams live IPTV channels from M3U/M3U8 playlists, navigable entirely with a TV remote.
 
+## Original Credit : IPTV org
 ## Demo
 
 [![Watch the demo](images/thumbnail.png)](https://www.youtube.com/watch?v=Uj-7Cc0Xxqk)
@@ -78,6 +79,4 @@ node tools/validate-playlist.js playlists/index.country.m3u
 
 This checks that every `#EXTINF` entry has a following stream URL and reports the number of parsed channels.
 
-## Support
 
-The app includes an in-app Donate screen (Stripe-hosted, adjustable amount) for anyone who'd like to support development.

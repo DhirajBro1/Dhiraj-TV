@@ -182,15 +182,15 @@ button {
 	width: 58px;
 	height: 58px;
 	margin-right: 16px;
-	border-radius: 16px;
+	border-radius: 50%;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	background: linear-gradient(135deg, #ff416c, #e31c3d 58%, #791c5b);
+	object-fit: cover;
+	object-position: center top;
 	box-shadow: 0 10px 30px rgba(227, 28, 61, 0.3);
-	font-size: 36px;
-	font-weight: 800;
-	font-style: italic;
+	border: 2px solid rgba(255, 255, 255, 0.5);
+	flex-shrink: 0;
 }
 
 .brand-name {

@@ -1,14 +1,14 @@
 {
   "deployId": 1,
   "projectDir": "/home/dhiraj/Desktop/Projects/TV_app/TVapp",
-  "timestamp": "2026-10-23T09:14:53.326Z",
+  "timestamp": "2026-10-23T09:47:52.552Z",
   "hashAlgorithm": "xxh3-128",
   "input": {
     "noun-live-tv-3548799.png": {
       "hash": "9ef8345c0bd95d735125074b58f15100"
     },
     "index.html": {
-      "hash": "06db652da91718e8bbbe2ab88cc9d3f0"
+      "hash": "0ced8d96c287881e4e5b072655351271"
     },
     "icon.png": {
       "hash": "1a426fbb8d27a3d3d797ae8415546bde"
@@ -20,10 +20,16 @@
       "hash": "c5f88ce60e93d11f2515a8759722ad00"
     },
     ".gitignore": {
-      "hash": "af110f8657ffacf0d1512287fb322999"
+      "hash": "1f1f49f68a73e1a409c8a7fd4e560a6a"
+    },
+    "tools/validate-playlist.js": {
+      "hash": "1ee4d69f00cf1eafebc5f6ea99cfd162"
     },
     "playlists/index.country.m3u": {
       "hash": "1cdb3c2fbc98cf1fd8aa1f5ad92a11f7"
+    },
+    "js/main.js": {
+      "hash": "b37ebd38d3812bb698ee770cac53eec5"
     },
     "images/tizen_32.png": {
       "hash": "58e5dcb3efbb5317d0a59fe8d10d4e5d"
@@ -35,16 +41,10 @@
       "hash": "e894ddabc60b521894d132f6bfe2a47b"
     },
     "images/donate.png": {
-      "hash": "cf40b1c8702f8382195aa9594dc13f99"
-    },
-    "js/main.js": {
-      "hash": "3843284374d37c2fa8c88efbfc34e1ab"
-    },
-    "tools/validate-playlist.js": {
-      "hash": "1ee4d69f00cf1eafebc5f6ea99cfd162"
+      "hash": "6a2cc314b30a6cd9a9e1f7bcd62390e9"
     },
     "css/style.css": {
-      "hash": "83543b4f24b5c38d5e80524a6b87fb13"
+      "hash": "8859f533f80595febd0cebcdd3a8db08"
     }
   },
   "output": {
@@ -52,7 +52,7 @@
       "hash": "9ef8345c0bd95d735125074b58f15100"
     },
     "Debug/projects/TVapp/index.html": {
-      "hash": "06db652da91718e8bbbe2ab88cc9d3f0"
+      "hash": "0ced8d96c287881e4e5b072655351271"
     },
     "Debug/projects/TVapp/icon.png": {
       "hash": "1a426fbb8d27a3d3d797ae8415546bde"
@@ -64,13 +64,16 @@
       "hash": "c5f88ce60e93d11f2515a8759722ad00"
     },
     "Debug/projects/TVapp/.gitignore": {
-      "hash": "af110f8657ffacf0d1512287fb322999"
+      "hash": "1f1f49f68a73e1a409c8a7fd4e560a6a"
+    },
+    "Debug/projects/TVapp/tools/validate-playlist.js": {
+      "hash": "1ee4d69f00cf1eafebc5f6ea99cfd162"
     },
     "Debug/projects/TVapp/playlists/index.country.m3u": {
       "hash": "1cdb3c2fbc98cf1fd8aa1f5ad92a11f7"
     },
     "Debug/projects/TVapp/js/main.js": {
-      "hash": "3843284374d37c2fa8c88efbfc34e1ab"
+      "hash": "b37ebd38d3812bb698ee770cac53eec5"
     },
     "Debug/projects/TVapp/images/tizen_32.png": {
       "hash": "58e5dcb3efbb5317d0a59fe8d10d4e5d"
@@ -82,46 +85,34 @@
       "hash": "e894ddabc60b521894d132f6bfe2a47b"
     },
     "Debug/projects/TVapp/images/donate.png": {
-      "hash": "cf40b1c8702f8382195aa9594dc13f99"
+      "hash": "6a2cc314b30a6cd9a9e1f7bcd62390e9"
     },
     "Debug/projects/TVapp/css/style.css": {
-      "hash": "83543b4f24b5c38d5e80524a6b87fb13"
+      "hash": "8859f533f80595febd0cebcdd3a8db08"
     },
     "Debug/projects/TVapp/.git/packed-refs": {
       "hash": "c11e9fda5b6db1115192b8e6b2d6079a"
     },
     "Debug/projects/TVapp/.git/index": {
-      "hash": "4df1f92ee52c66c28523616997014fb7"
+      "hash": "f09d2501f2d43588adfd15d4b97b1f03"
     },
     "Debug/projects/TVapp/.git/description": {
       "hash": "3d52caed603eecd4a078a3c05940ed25"
     },
     "Debug/projects/TVapp/.git/config": {
-      "hash": "359ff062c922eb71305d9207e97d0ab0"
+      "hash": "07df2d0b003342c62fc9710957bcbaf0"
     },
     "Debug/projects/TVapp/.git/HEAD": {
       "hash": "7b32a47360586b5368092c0414582c70"
     },
-    "Debug/projects/TVapp/tools/validate-playlist.js": {
-      "hash": "1ee4d69f00cf1eafebc5f6ea99cfd162"
+    "Debug/projects/TVapp/.git/COMMIT_EDITMSG": {
+      "hash": "5e9d0636dbbb708f1edf801a31ba1d06"
     },
     "Debug/projects/TVapp/.git/logs/HEAD": {
-      "hash": "e09850fac96429df361b5b4e49a25fa2"
+      "hash": "577322ce60375ba8bdeb3c0f8bca9266"
     },
     "Debug/projects/TVapp/.git/info/exclude": {
       "hash": "8b2b737e8b5fe16b4a6bf701ae0412d8"
-    },
-    "Debug/projects/TVapp/.git/refs/heads/main": {
-      "hash": "79546c2ab75f611161eddd2b843e2a33"
-    },
-    "Debug/projects/TVapp/.git/objects/pack/pack-9fe6cb2eb7271605ff5c89e49710043fabb57c68.rev": {
-      "hash": "1badaa01d39d5e9dd6fdfe70fb83cbde"
-    },
-    "Debug/projects/TVapp/.git/objects/pack/pack-9fe6cb2eb7271605ff5c89e49710043fabb57c68.pack": {
-      "hash": "c1b0fc21fed5685e0e6997da27c42208"
-    },
-    "Debug/projects/TVapp/.git/objects/pack/pack-9fe6cb2eb7271605ff5c89e49710043fabb57c68.idx": {
-      "hash": "8013312a77718b3b85d5a4801f16d8c0"
     },
     "Debug/projects/TVapp/.git/hooks/update.sample": {
       "hash": "cd0059bf4634abe5cbf56087ccbc632a"
@@ -165,11 +156,98 @@
     "Debug/projects/TVapp/.git/hooks/applypatch-msg.sample": {
       "hash": "4160256a2592c4c233e797d14c4e9415"
     },
+    "Debug/projects/TVapp/.git/refs/heads/main": {
+      "hash": "795025848af3fdf0846cb222b9474f60"
+    },
+    "Debug/projects/TVapp/.git/objects/pack/pack-9fe6cb2eb7271605ff5c89e49710043fabb57c68.rev": {
+      "hash": "1badaa01d39d5e9dd6fdfe70fb83cbde"
+    },
+    "Debug/projects/TVapp/.git/objects/pack/pack-9fe6cb2eb7271605ff5c89e49710043fabb57c68.pack": {
+      "hash": "c1b0fc21fed5685e0e6997da27c42208"
+    },
+    "Debug/projects/TVapp/.git/objects/pack/pack-9fe6cb2eb7271605ff5c89e49710043fabb57c68.idx": {
+      "hash": "8013312a77718b3b85d5a4801f16d8c0"
+    },
+    "Debug/projects/TVapp/.git/objects/ff/4217f67f7eaa9b97661f20df6a3ed653fa1e22": {
+      "hash": "aae562d954005b5df68e8d6f2a32053c"
+    },
+    "Debug/projects/TVapp/.git/objects/f7/c32f01e49ae1b3a88c2b6e58fa5a89484a98f2": {
+      "hash": "a376d6f6ba1a9505db87836741d18781"
+    },
+    "Debug/projects/TVapp/.git/objects/f4/f7ef6657fa783d6663b014b4fe7a00b6c88fbd": {
+      "hash": "d4c9e79e6625fe313b7d53761baa219c"
+    },
+    "Debug/projects/TVapp/.git/objects/eb/617ab73a350e84d2e45e2ffb094a33b07d3e93": {
+      "hash": "9bf5e4e959ef71e9559c93cf4d1f900a"
+    },
+    "Debug/projects/TVapp/.git/objects/ea/d751cc6a9bae0517d8f758ae5144f4b6b84ce8": {
+      "hash": "33b96ac809a739b399f86b7e48d6f7e4"
+    },
+    "Debug/projects/TVapp/.git/objects/e7/116dc997513d6866c4cbaa590a68bfc649962b": {
+      "hash": "0565c847d6d159e5e26e9d46faf2e384"
+    },
+    "Debug/projects/TVapp/.git/objects/d4/653fd51f1729da6ac5d0f6f06ebf8f518e9fcc": {
+      "hash": "a14375d011ef40e4bf6f0891a1748f78"
+    },
+    "Debug/projects/TVapp/.git/objects/c8/9c64ad1cf36f52ccc89c9e2446c4904d8ad975": {
+      "hash": "92c810c5482b711c5d5478e0062283f9"
+    },
+    "Debug/projects/TVapp/.git/objects/a2/2fc25ec415aa10341a4ad1119b894caa978687": {
+      "hash": "30ae6253fb2dd5eeffac6d4c83395ad7"
+    },
+    "Debug/projects/TVapp/.git/objects/a0/3ff950ab6f7296418c0740feb58b1f4d017317": {
+      "hash": "faaa7c877b9fdf122e8133b132f918b2"
+    },
+    "Debug/projects/TVapp/.git/objects/9b/6085860f4450989f333d0522bad86d43440400": {
+      "hash": "7769dc5e47a2f70d5047f5a13f3f46f4"
+    },
+    "Debug/projects/TVapp/.git/objects/88/c686fbdd59b10710bed414e76768c8d0275eae": {
+      "hash": "409c5cf3d9c25e54482d7bb0481c57e0"
+    },
+    "Debug/projects/TVapp/.git/objects/67/bc6d924a9237a87875cc95190997d5b7894d60": {
+      "hash": "6382dd3332c2685d8616da50eadbcfc8"
+    },
+    "Debug/projects/TVapp/.git/objects/5c/076ce3d9a2dd15f105c845964de56d4f6050b0": {
+      "hash": "a301142da49b82bfeca65521286bd3f7"
+    },
+    "Debug/projects/TVapp/.git/objects/52/5842bd88b66b3434ecae0da90f17c979d3b43a": {
+      "hash": "0b1a780a658ce166d4bcee61ecbc6943"
+    },
+    "Debug/projects/TVapp/.git/objects/4b/061055ef8deba41d764243e9c066388ed6169c": {
+      "hash": "d5ef2749efedb9be159b94b723955d2f"
+    },
+    "Debug/projects/TVapp/.git/objects/46/a2099bd0a2f4c67f319e1a90c904d834c9e699": {
+      "hash": "701586439d12c5728e913fc00c756adb"
+    },
+    "Debug/projects/TVapp/.git/objects/43/e82b91dcf26305c30f1d8192e0879501cda592": {
+      "hash": "15e2716f8ee5e8e0f6a9a053cb85a532"
+    },
+    "Debug/projects/TVapp/.git/objects/3e/2ac106b14c71692c553d1428c7c3ef93964658": {
+      "hash": "8799db63df843844c8a472ea2e8132f0"
+    },
+    "Debug/projects/TVapp/.git/objects/3d/de05bd3574309b70afbce7fbf909e64913ae43": {
+      "hash": "ad7a04ae4ae1ea6db170dea89f8482bb"
+    },
+    "Debug/projects/TVapp/.git/objects/3a/f0704d22b79eb95622ccfa8b9841de32658b46": {
+      "hash": "0745b58e3b46c35b99c24ba766b4cebb"
+    },
+    "Debug/projects/TVapp/.git/objects/32/b81d38d4f0395c1ff794b7a4f06d364674edd6": {
+      "hash": "7fe0f04a7f44fde98c34cb8f8afa895c"
+    },
+    "Debug/projects/TVapp/.git/objects/07/9d4f88470b3f04540cc037f947b0b60a0e6da2": {
+      "hash": "fcca6b4f99bcf020824d81e904fb3ac0"
+    },
+    "Debug/projects/TVapp/.git/objects/04/2f3a2488e0dbe2a97814095a021fb19d9ffe42": {
+      "hash": "dad08a09e87a95064c2631b5515f7c68"
+    },
+    "Debug/projects/TVapp/.git/objects/03/9bb1db489bef1733038b01e86fde66cb1e3265": {
+      "hash": "a1193124a6b6282442457eb6f938a05f"
+    },
     "Debug/projects/TVapp/.git/refs/remotes/origin/HEAD": {
       "hash": "df9cdac1568a9dc426f38a628b020637"
     },
     "Debug/projects/TVapp/.git/logs/refs/heads/main": {
-      "hash": "e09850fac96429df361b5b4e49a25fa2"
+      "hash": "577322ce60375ba8bdeb3c0f8bca9266"
     },
     "Debug/projects/TVapp/.git/logs/refs/remotes/origin/HEAD": {
       "hash": "e09850fac96429df361b5b4e49a25fa2"
