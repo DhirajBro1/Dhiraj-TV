@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy"
+	content="default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; object-src *">
 <title>TVapp</title>
 <link rel="stylesheet" type="text/css" href="css/style.css">
 </head>
@@ -20,6 +22,12 @@
 				<svg viewBox="0 0 24 24" width="28" height="28">
 					<path fill="currentColor"
 						d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" /></svg>
+			</button>
+			<button class="rail-icon" id="navMyChannels" tabindex="-1"
+				title="My Channels">
+				<svg viewBox="0 0 24 24" width="28" height="28">
+					<path fill="currentColor"
+						d="M4 5h16v10H4zM2 17h20v2H2zM9 19h6v2H9z" /></svg>
 			</button>
 			<button class="rail-icon" id="navDonate" tabindex="-1"
 				title="Support">
@@ -44,14 +52,26 @@
 					<div class="hero-bg" id="heroBg"></div>
 					<div class="hero-gradient"></div>
 					<div class="hero-content">
-						<div class="hero-badge">LIVE</div>
+						<div class="brand-lockup">
+							<div class="brand-mark">D</div>
+							<div>
+								<div class="brand-name">DHIRAJ TV</div>
+								<div class="brand-caption">YOUR WORLD. YOUR SCREEN.</div>
+							</div>
+						</div>
+						<div class="hero-badge">WELCOME</div>
 						<h1 class="hero-title" id="heroTitle">&nbsp;</h1>
 						<p class="hero-subtitle" id="heroSubtitle">&nbsp;</p>
+						<button class="hero-browse-btn" id="heroBrowseBtn" tabindex="-1">
+							<span>&#9654;</span><span>Browse live channels</span>
+						</button>
 					</div>
+					<div class="hero-orbit hero-orbit-one"></div>
+					<div class="hero-orbit hero-orbit-two"></div>
 				</div>
 
 				<section class="row">
-					<h2 class="row-title">Favorites</h2>
+					<h2 class="row-title">Favourites</h2>
 					<div class="tile-row" id="favoritesRow"></div>
 				</section>
 
@@ -73,6 +93,12 @@
 				<div class="channel-grid" id="categoryChannelsGrid"></div>
 			</section>
 
+			<!-- ===================== My Channels screen ===================== -->
+			<section id="screen-my-channels" class="screen">
+				<h1 class="page-title">My Channels</h1>
+				<div class="channel-grid" id="myChannelsGrid"></div>
+			</section>
+
 			<!-- ===================== Settings Screen ===================== -->
 			<section id="screen-settings" class="screen">
 				<h1 class="page-title">Playlists</h1>
@@ -87,8 +113,8 @@
 				<div class="donate-panel">
 					<img class="donate-image" id="donateImage" src="images/donate.png" alt="Support this app">
 					<div class="donate-support-card">
-						<h2 class="donate-support-title">Support the developer</h2>
-						<div class="donate-qr">
+						<!-- <h2 class="donate-support-title">Support the developer</h2> -->
+						<!-- <div class="donate-qr">
 							<img src="images/donate_qr.png" alt="QR code to donate via Stripe">
 						</div>
 						<p class="donate-url">donate.stripe.com/8x2eVef1M8vR58513Ebwk01</p>
@@ -96,7 +122,7 @@
 							leave a tip via Stripe &mdash; starts at $1, but you can change
 							it to whatever amount you'd like. Totally optional &mdash;
 							thank you for using the app either way!</p>
-					</div>
+					</div> -->
 				</div>
 			</section>
 
@@ -118,7 +144,8 @@
 
 			<!-- ===================== Player Screen ===================== -->
 			<section id="screen-player" class="screen">
-				<video id="videoPlayer" autoplay></video>
+				<object id="avplayObject" type="application/avplayer"></object>
+				<video id="videoPlayer" autoplay playsinline></video>
 				<div class="player-overlay" id="playerOverlay">
 					<div class="now-playing">
 						<div id="nowPlayingLogo" class="channel-logo"></div>
@@ -127,9 +154,37 @@
 							<div class="now-playing-group" id="nowPlayingGroup"></div>
 						</div>
 					</div>
-					<button class="favorite-btn" id="favoriteBtn" tabindex="-1">
+					<div class="player-actions">
+						<button class="player-control-btn" id="rewindBtn" tabindex="-1">
+							<span>&#8634;</span><span>Rewind</span>
+						</button>
+						<button class="player-control-btn" id="fastForwardBtn" tabindex="-1">
+							<span>&#8635;</span><span>Fast-forward</span>
+						</button>
+						<button class="player-control-btn" id="playPauseBtn" tabindex="-1">
+							<span id="playPauseIcon">&#9654;</span><span id="playPauseLabel">Play</span>
+						</button>
+						<button class="player-control-btn" id="goLiveBtn" tabindex="-1">
+							<span>&#9679;</span><span>Go Live</span>
+						</button>
+						<button class="player-control-btn" id="seekStepBtn" tabindex="-1">
+							<span>&#8644;</span><span id="seekStepLabel">Step 10 seconds</span>
+						</button>
+						<button class="favorite-btn" id="favoriteBtn" tabindex="-1">
 						<span id="favoriteIcon">&#9734;</span><span>Favorite</span>
-					</button>
+						</button>
+					</div>
+					<div class="player-timeline">
+						<button class="timeline-track" id="timelineBtn" tabindex="-1" aria-label="Live rewind timeline">
+							<span class="timeline-fill" id="timelineFill"></span>
+							<span class="timeline-live-marker"></span>
+						</button>
+						<div class="timeline-labels">
+							<span id="timelineStatus">Live rewind unavailable for this channel</span>
+							<span id="timelinePosition">LIVE</span>
+						</div>
+						<div class="catchup-status" id="catchupStatus">Catch-up is not available for this channel.</div>
+					</div>
 				</div>
 				<div class="toast" id="toast"></div>
 			</section>
@@ -153,6 +208,7 @@
      instead — Tizen Studio projects usually vendor their JS libs rather than pulling from
      a CDN at runtime. -->
 	<script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
+	<script src="$WEBAPIS/webapis/webapis.js"></script>
 	<script src="js/main.js"></script>
 </body>
 </html>

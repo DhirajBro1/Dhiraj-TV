@@ -10,3 +10,5 @@
 # Ad-hoc/local build artifacts
 *.wgt
 !/TVapp.wgt
+
+Debug

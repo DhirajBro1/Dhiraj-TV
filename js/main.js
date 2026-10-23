@@ -1,3 +1,5 @@
+/// <reference path="../../index.d.ts" />
+
 document.addEventListener('DOMContentLoaded', function () {
     'use strict';
 
@@ -10,6 +12,10 @@ document.addEventListener('DOMContentLoaded', function () {
     var OVERLAY_HIDE_MS = 5000;
     var TOAST_MS = 3000;
     var FETCH_TIMEOUT_MS = 15000;
+    var PLAYBACK_TIMEOUT_MS = 20000;
+    var DVR_REFRESH_MS = 5000;
+    var SEEK_STEPS_MS = [10000, 30000, 60000, 300000];
+    var SEEK_STEP_LABELS = ['10 seconds', '30 seconds', '1 minute', '5 minutes'];
 
     // Bundled locally (playlists/index.country.m3u) rather than fetched from
     // iptv-org.github.io at runtime — the channel list then works even when
@@ -49,14 +55,50 @@ document.addEventListener('DOMContentLoaded', function () {
         zapContext: 'category',  // 'category' | 'favorites'
         zapList: [],
         hls: null,
+        avplay: null,
+        playerMode: null,
+        playbackToken: 0,
+        playbackTimeoutId: null,
+        previousScreen: 'screen-grid',
         overlayTimeoutId: null,
         toastTimeoutId: null,
-        keyboardBuffer: 'http://'
+        keyboardBuffer: 'http://',
+        dvr: { available: false, durationMs: 0, positionMs: 0, liveEdgeMs: 0, earliestMs: 0, seeking: false, lastEdgeSampleAt: 0 },
+        dvrRefreshId: null,
+        seekStepIndex: 0
     };
 
     var editingPlaylistId = null;
 
     var videoPlayer = document.getElementById('videoPlayer');
+
+    function playbackUrlForLog(url) {
+        try {
+            var parsed = new URL(url);
+            return parsed.protocol + '//' + parsed.host + parsed.pathname;
+        } catch (e) {
+            return '[invalid URL]';
+        }
+    }
+
+    function avplayUrlForChannel(ch) {
+        // This provider's master advertises a 1080p H.264 level that some
+        // older TV firmware can decode for audio but cannot render reliably.
+        // Keep the fallback limited to this known provider/channel.
+        if (ch && ch.url === 'https://cdnb4u.wiseplayout.com/B4U_Bhojpuri/master.m3u8') {
+            return 'https://cdnb4u.wiseplayout.com/B4U_Bhojpuri/HD720/HD720.m3u8';
+        }
+        return ch.url;
+    }
+
+    function playbackLog(stage, ch, details) {
+        console.info('[playback]', stage, {
+            channel: ch ? ch.name : '',
+            url: ch ? playbackUrlForLog(ch.url) : '',
+            player: state.playerMode || 'none',
+            details: details || ''
+        });
+    }
 
     // ==========================================================================
     // Remote control keys — ChannelUp/Down and MediaPlayPause need explicit
@@ -64,7 +106,10 @@ document.addEventListener('DOMContentLoaded', function () {
     // ==========================================================================
     if (window.tizen && tizen.tvinputdevice) {
         try {
-            tizen.tvinputdevice.registerKeyBatch(['ChannelUp', 'ChannelDown', 'MediaPlayPause']);
+            tizen.tvinputdevice.registerKeyBatch([
+                'ChannelUp', 'ChannelDown', 'MediaPlayPause',
+                'MediaRewind', 'MediaFastForward'
+            ]);
         } catch (e) {
             console.error('registerKeyBatch failed:', e);
         }
@@ -178,8 +223,9 @@ document.addEventListener('DOMContentLoaded', function () {
     function currentRailRow() {
         if (document.getElementById('screen-categories').classList.contains('active') ||
             document.getElementById('screen-category-channels').classList.contains('active')) return 1;
-        if (document.getElementById('screen-donate').classList.contains('active')) return 2;
-        if (document.getElementById('screen-settings').classList.contains('active')) return 3;
+        if (document.getElementById('screen-my-channels').classList.contains('active')) return 2;
+        if (document.getElementById('screen-donate').classList.contains('active')) return 3;
+        if (document.getElementById('screen-settings').classList.contains('active')) return 4;
         return 0;
     }
 
@@ -233,6 +279,11 @@ document.addEventListener('DOMContentLoaded', function () {
         state.toastTimeoutId = setTimeout(function () { toast.classList.remove('visible'); }, TOAST_MS);
     }
 
+    function failPlayback(message) {
+        stopPlayback();
+        showToast(message);
+    }
+
     // ==========================================================================
     // Screen switching
     // ==========================================================================
@@ -246,16 +297,20 @@ document.addEventListener('DOMContentLoaded', function () {
         showScreen(id);
         document.getElementById('navHome').classList.toggle('active', id === 'screen-grid');
         document.getElementById('navCategories').classList.toggle('active', id === 'screen-categories' || id === 'screen-category-channels');
+        document.getElementById('navMyChannels').classList.toggle('active', id === 'screen-my-channels');
         document.getElementById('navDonate').classList.toggle('active', id === 'screen-donate');
         document.getElementById('navSettings').classList.toggle('active', id === 'screen-settings');
 
         if (id === 'screen-grid') {
-            Focus.setZone(visibleFavorites().length ? 'favoritesRow' : 'iconRail', 0, 0);
+            Focus.setZone('homeWelcome', 0, 0);
         } else if (id === 'screen-categories') {
             renderCategoriesScreen();
             Focus.setZone(state.categories.length ? 'categoriesGrid' : 'iconRail', state.categories.length ? 0 : 1, 0);
         } else if (id === 'screen-donate') {
-            Focus.setZone('iconRail', 2, 0);
+            Focus.setZone('iconRail', 3, 0);
+        } else if (id === 'screen-my-channels') {
+            renderMyChannelsScreen();
+            Focus.setZone('myChannelsGrid', 0, 0);
         } else if (id === 'screen-settings') {
             renderPlaylistList();
             Focus.setZone('playlistList', 0, 0);
@@ -263,13 +318,17 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     document.getElementById('navHome').addEventListener('click', function () { switchToScreen('screen-grid'); });
+    document.getElementById('heroBrowseBtn').addEventListener('click', function () {
+        switchToScreen('screen-categories');
+    });
     document.getElementById('navCategories').addEventListener('click', function () { switchToScreen('screen-categories'); });
+    document.getElementById('navMyChannels').addEventListener('click', function () { switchToScreen('screen-my-channels'); });
     document.getElementById('navDonate').addEventListener('click', function () { switchToScreen('screen-donate'); });
     document.getElementById('navSettings').addEventListener('click', function () { switchToScreen('screen-settings'); });
 
     Focus.zones.iconRail = {
         getMatrix: function () {
-            return [[document.getElementById('navHome')], [document.getElementById('navCategories')], [document.getElementById('navDonate')], [document.getElementById('navSettings')]];
+            return [[document.getElementById('navHome')], [document.getElementById('navCategories')], [document.getElementById('navMyChannels')], [document.getElementById('navDonate')], [document.getElementById('navSettings')]];
         },
         onEdge: function (dir) {
             if (dir !== 'right') return;
@@ -281,6 +340,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 Focus.setZone('playlistList', 0, 0);
             } else if (document.getElementById('screen-donate').classList.contains('active')) {
                 // no focusable content on the donate screen besides the rail
+            } else if (document.getElementById('screen-my-channels').classList.contains('active')) {
+                Focus.setZone('myChannelsGrid', 0, 0);
             } else if (visibleFavorites().length) {
                 Focus.setZone('favoritesRow', 0, 0);
             }
@@ -311,8 +372,28 @@ document.addEventListener('DOMContentLoaded', function () {
                     logo: attrs['tvg-logo'] || '',
                     group: attrs['group-title'] || 'Other',
                     tvgId: attrs['tvg-id'] || '',
-                    tvgCountry: attrs['tvg-country'] || ''
+                    tvgCountry: attrs['tvg-country'] || '',
+                    catchup: attrs.catchup || '',
+                    catchupDays: attrs['catchup-days'] || '',
+                    catchupSource: attrs['catchup-source'] || '',
+                    timeshift: attrs.timeshift || '',
+                    archive: attrs.archive || '',
+                    catchupTime: attrs['catchup-time'] || '',
+                    catchupDuration: attrs['catchup-duration'] || ''
                 };
+            } else if (pending && line.indexOf('#EXTVLCOPT:') === 0) {
+                var option = line.slice(12).split('=');
+                var optionName = option.shift().toLowerCase();
+                var optionValue = option.join('=');
+                if (optionName === 'catchup' || optionName === 'catchup-days' ||
+                    optionName === 'catchup-source' || optionName === 'timeshift' ||
+                    optionName === 'archive' || optionName === 'catchup-time' ||
+                    optionName === 'catchup-duration') {
+                    pending[optionName === 'catchup-days' ? 'catchupDays' :
+                        optionName === 'catchup-source' ? 'catchupSource' :
+                        optionName === 'catchup-time' ? 'catchupTime' :
+                        optionName === 'catchup-duration' ? 'catchupDuration' : optionName] = optionValue.trim();
+                }
             } else if (line.indexOf('#') !== 0) {
                 if (pending) { pending.url = line; channels.push(pending); pending = null; }
             }
@@ -560,21 +641,12 @@ document.addEventListener('DOMContentLoaded', function () {
     // Hero banner
     // ==========================================================================
     function renderHero() {
-        var featured = visibleFavorites()[0] || (state.categories[0] && state.categories[0].channels[0]) || null;
         var bg = document.getElementById('heroBg');
         var title = document.getElementById('heroTitle');
         var subtitle = document.getElementById('heroSubtitle');
-
-        if (!featured) {
-            bg.style.backgroundImage = '';
-            title.textContent = 'TVapp';
-            subtitle.textContent = 'Add a playlist to get started';
-            return;
-        }
-
-        bg.style.backgroundImage = featured.logo ? ('url(' + JSON.stringify(featured.logo) + ')') : '';
-        title.textContent = featured.name;
-        subtitle.textContent = featured.group || '';
+        bg.style.backgroundImage = '';
+        title.textContent = 'Entertainment starts here';
+        subtitle.textContent = 'Live TV, favourites and channels made for your home screen.';
     }
 
     // ==========================================================================
@@ -601,7 +673,53 @@ document.addEventListener('DOMContentLoaded', function () {
     Focus.zones.favoritesRow = {
         getMatrix: function () { return [Array.prototype.slice.call(document.querySelectorAll('#favoritesRow .channel-tile'))]; }
     };
+
+    Focus.zones.homeWelcome = {
+        getMatrix: function () { return [[document.getElementById('heroBrowseBtn')]]; },
+        onEdge: function (dir) {
+            if (dir === 'down' && visibleFavorites().length) Focus.setZone('favoritesRow', 0, 0);
+            if (dir === 'left') Focus.setZone('iconRail', 0, 0);
+        }
+    };
     leftEdgeToRail('favoritesRow');
+
+    function myChannelMatches(ch) {
+        var name = ch.name.toLowerCase();
+        return name.indexOf('dangal tv') !== -1 ||
+            name.indexOf('b4u bhojpuri') !== -1 ||
+            name.indexOf('manoranjan tv') !== -1 ||
+            name.indexOf('shemaroo tv') !== -1;
+    }
+
+    function renderMyChannelsScreen() {
+        var grid = document.getElementById('myChannelsGrid');
+        grid.innerHTML = '';
+        var channels = [];
+        var seen = {};
+        state.channels.forEach(function (ch) {
+            if (myChannelMatches(ch) && !seen[ch.name + '|' + ch.url]) {
+                seen[ch.name + '|' + ch.url] = true;
+                channels.push(ch);
+            }
+        });
+        if (!channels.length) {
+            var hint = document.createElement('div');
+            hint.className = 'empty-hint';
+            hint.textContent = 'My channels are not available in the active playlist.';
+            grid.appendChild(hint);
+            return;
+        }
+        channels.forEach(function (ch) {
+            grid.appendChild(buildChannelTile(ch, function () { playChannel(ch, 'my-channels'); }));
+        });
+    }
+
+    Focus.zones.myChannelsGrid = {
+        getMatrix: function () {
+            return rowsByLayout(Array.prototype.slice.call(document.querySelectorAll('#myChannelsGrid .channel-tile')));
+        }
+    };
+    leftEdgeToRail('myChannelsGrid');
 
     // ==========================================================================
     // Rendering — Categories browse screen. A two-column alphabetical list:
@@ -970,14 +1088,203 @@ document.addEventListener('DOMContentLoaded', function () {
         switchToScreen(editingPlaylistId ? 'screen-settings' : 'screen-grid');
     });
 
+    function resetDvrState() {
+        if (state.dvrRefreshId) {
+            clearInterval(state.dvrRefreshId);
+            state.dvrRefreshId = null;
+        }
+        state.dvr = { available: false, durationMs: 0, positionMs: 0, liveEdgeMs: 0, earliestMs: 0, seeking: false, lastEdgeSampleAt: 0 };
+        updateDvrUi();
+    }
+
+    function parseLiveDuration(value) {
+        if (typeof value !== 'string' && typeof value !== 'number') return 0;
+        var duration = Number(value);
+        return isFinite(duration) && duration > 0 ? duration : 0;
+    }
+
+    function hasCatchupTemplate(ch) {
+        if (!ch || !ch.catchupSource) return false;
+        return /^https?:\/\//i.test(ch.catchupSource) &&
+            /(\{start\}|\{end\}|\{duration\}|\\\$UTC|\$START|\$END|%s)/i.test(ch.catchupSource);
+    }
+
+    function updateCatchupUi() {
+        var status = document.getElementById('catchupStatus');
+        if (!state.nowPlaying || !hasCatchupTemplate(state.nowPlaying)) {
+            status.textContent = 'Catch-up is not available for this channel.';
+            return;
+        }
+        status.textContent = 'Catch-up metadata found; program times are required to play recordings.';
+    }
+
+    function updateDvrUi() {
+        var dvr = state.dvr;
+        var track = document.getElementById('timelineBtn');
+        var fill = document.getElementById('timelineFill');
+        var status = document.getElementById('timelineStatus');
+        var position = document.getElementById('timelinePosition');
+        if (!dvr.available || !dvr.durationMs) {
+            track.disabled = true;
+            fill.style.width = '0%';
+            status.textContent = 'Live rewind unavailable for this channel';
+            position.textContent = 'LIVE';
+            return;
+        }
+        track.disabled = false;
+        var ratio = Math.max(0, Math.min(1, dvr.positionMs / dvr.liveEdgeMs));
+        fill.style.width = (ratio * 100) + '%';
+        var availableMinutes = Math.floor(dvr.durationMs / 60000);
+        status.textContent = 'Live rewind: ' + (availableMinutes < 1 ? 'less than 1 minute' : availableMinutes + ' minutes') + ' available';
+        var behindMs = Math.max(0, dvr.liveEdgeMs - dvr.positionMs);
+        position.textContent = behindMs < 2000 ? 'LIVE' : formatDuration(behindMs) + ' behind live';
+    }
+
+    function formatDuration(milliseconds) {
+        var totalSeconds = Math.floor(milliseconds / 1000);
+        var minutes = Math.floor(totalSeconds / 60);
+        var seconds = totalSeconds % 60;
+        return minutes ? minutes + 'm ' + seconds + 's' : seconds + 's';
+    }
+
+    function refreshDvrRange() {
+        if (state.playerMode !== 'AVPlay' || !state.avplay || state.dvr.seeking) return false;
+        try {
+            var liveDurationMs = parseLiveDuration(state.avplay.getStreamingProperty('GET_LIVE_DURATION'));
+            var currentMs = Number(state.avplay.getCurrentTime());
+            if (!liveDurationMs || !isFinite(currentMs) || currentMs < 0) {
+                state.dvr.available = false;
+                updateDvrUi();
+                return false;
+            }
+            // Some older firmware returns GET_LIVE_DURATION in seconds while
+            // getCurrentTime()/seekTo() use milliseconds.
+            if (liveDurationMs < 1000 && currentMs > 10000) liveDurationMs *= 1000;
+            state.dvr.available = true;
+            state.dvr.durationMs = liveDurationMs;
+            var nowMs = Date.now();
+            if (state.dvr.lastEdgeSampleAt && state.dvr.liveEdgeMs) {
+                state.dvr.liveEdgeMs += Math.max(0, nowMs - state.dvr.lastEdgeSampleAt);
+            } else {
+                state.dvr.liveEdgeMs = Math.max(currentMs, liveDurationMs);
+            }
+            state.dvr.liveEdgeMs = Math.max(state.dvr.liveEdgeMs, currentMs);
+            state.dvr.lastEdgeSampleAt = nowMs;
+            state.dvr.earliestMs = Math.max(0, state.dvr.liveEdgeMs - liveDurationMs);
+            state.dvr.positionMs = Math.max(state.dvr.earliestMs, Math.min(currentMs, state.dvr.liveEdgeMs));
+            updateDvrUi();
+            return true;
+        } catch (error) {
+            state.dvr.available = false;
+            updateDvrUi();
+            return false;
+        }
+    }
+
+    function startDvrMonitoring() {
+        resetDvrState();
+        refreshDvrRange();
+        state.dvrRefreshId = setInterval(refreshDvrRange, DVR_REFRESH_MS);
+    }
+
+    function avplaySeek(targetMs, onSuccess, onError) {
+        try {
+            // Newer AVPlay versions expose asynchronous callbacks.
+            state.avplay.seekTo(targetMs, onSuccess, onError);
+        } catch (callbackError) {
+            try {
+                // Older target TVs expose only seekTo(milliseconds).
+                state.avplay.seekTo(targetMs);
+                setTimeout(onSuccess, 500);
+            } catch (seekError) {
+                onError(seekError);
+            }
+        }
+    }
+
+    function seekPlayback(deltaMs) {
+        if (state.playerMode === 'AVPlay' && state.avplay) {
+            if (!refreshDvrRange() || !state.dvr.available) {
+                showToast('Live rewind unavailable for this channel');
+                showOverlay();
+                return;
+            }
+            if (state.dvr.seeking) {
+                showToast('Seek already in progress');
+                return;
+            }
+            var targetMs = Math.max(state.dvr.earliestMs,
+                Math.min(state.dvr.liveEdgeMs, state.dvr.positionMs + deltaMs));
+            if (targetMs === state.dvr.positionMs) {
+                showToast(deltaMs < 0 ? 'Already at the earliest available point' : 'Already at the live edge');
+                return;
+            }
+            state.dvr.seeking = true;
+            try {
+                avplaySeek(targetMs, function () {
+                    state.dvr.seeking = false;
+                    refreshDvrRange();
+                    showOverlay();
+                }, function (error) {
+                    state.dvr.seeking = false;
+                    console.warn('[playback] AVPlay seek failed', error);
+                    showToast('Seeking is not available for this channel');
+                    refreshDvrRange();
+                });
+                playbackLog('seek', state.nowPlaying, (deltaMs / 1000) + ' seconds');
+            } catch (error) {
+                state.dvr.seeking = false;
+                console.warn('[playback] AVPlay seek unavailable', error);
+                showToast('Seeking is not available for this channel');
+            }
+        } else if (videoPlayer.duration && isFinite(videoPlayer.duration)) {
+            videoPlayer.currentTime = Math.max(0, Math.min(
+                videoPlayer.duration,
+                videoPlayer.currentTime + (deltaMs / 1000)
+            ));
+        }
+        showOverlay();
+    }
+
+    function goLive() {
+        if (state.playerMode !== 'AVPlay' || !state.avplay || !refreshDvrRange()) {
+            showToast('Live edge is unavailable for this channel');
+            return;
+        }
+        if (state.dvr.seeking) return;
+        state.dvr.seeking = true;
+        try {
+            avplaySeek(state.dvr.liveEdgeMs, function () {
+                state.dvr.seeking = false;
+                refreshDvrRange();
+                showToast('Live');
+                showOverlay();
+            }, function (error) {
+                state.dvr.seeking = false;
+                console.warn('[playback] AVPlay go-live failed', error);
+                showToast('Unable to return to live');
+            });
+        } catch (error) {
+            state.dvr.seeking = false;
+            console.warn('[playback] AVPlay go-live unavailable', error);
+            showToast('Unable to return to live');
+        }
+    }
+
     // ==========================================================================
     // Player screen — fullscreen, favorite toggled via a real focusable button
     // (long-press proved unreliable on this remote/WebKit combination).
     // ==========================================================================
     function playChannel(ch, context) {
+        var activeScreen = document.querySelector('.screen.active');
+        if (activeScreen && activeScreen.id !== 'screen-player') {
+            state.previousScreen = activeScreen.id;
+        }
         state.nowPlaying = ch;
         state.zapContext = context;
-        state.zapList = context === 'favorites' ? visibleFavorites() : (state.categories[state.activeCategoryIndex] || { channels: [] }).channels;
+        state.zapList = context === 'favorites' ? visibleFavorites() :
+            context === 'my-channels' ? state.channels.filter(myChannelMatches) :
+                (state.categories[state.activeCategoryIndex] || { channels: [] }).channels;
         showScreen('screen-player');
         startPlayback();
     }
@@ -995,33 +1302,132 @@ document.addEventListener('DOMContentLoaded', function () {
         var ch = state.nowPlaying;
         if (!ch) return;
 
-        if (state.hls) { state.hls.destroy(); state.hls = null; }
-        videoPlayer.removeAttribute('src');
-        videoPlayer.load();
+        stopPlayback();
+        var token = ++state.playbackToken;
 
         document.getElementById('nowPlayingName').textContent = ch.name;
         document.getElementById('nowPlayingGroup').textContent = ch.group || '';
         var logoEl = document.getElementById('nowPlayingLogo');
         logoEl.style.backgroundImage = ch.logo ? ('url(' + JSON.stringify(ch.logo) + ')') : '';
         updateFavoriteButton();
+        resetDvrState();
+        updateCatchupUi();
 
-        if (Hls.isSupported()) {
-            state.hls = new Hls();
+        var avplay = window.webapis && window.webapis.avplay;
+        if (avplay) {
+            state.avplay = avplay;
+            state.playerMode = 'AVPlay';
+            document.getElementById('screen-player').classList.add('avplay-active');
+            document.getElementById('avplayObject').style.display = 'block';
+            videoPlayer.style.display = 'none';
+            var avplayUrl = avplayUrlForChannel(ch);
+            playbackLog('open', ch, avplayUrl === ch.url ? '' : '720p child playlist');
+            try {
+                avplay.open(avplayUrl);
+                try {
+                    avplay.setStreamingProperty('ADAPTIVE_INFO', 'FIXED_MAX_RESOLUTION=1280X720');
+                    playbackLog('stream-cap', ch, '1280x720');
+                } catch (error) {
+                    console.warn('[playback] adaptive resolution cap unavailable', error);
+                }
+                avplay.setDisplayMethod('PLAYER_DISPLAY_MODE_FULL_SCREEN');
+                avplay.setDisplayRect(0, 0, 1920, 1080);
+                avplay.setListener({
+                    onbufferingstart: function () { playbackLog('buffering', ch, 'start'); },
+                    onbufferingprogress: function (percent) { playbackLog('buffering', ch, percent + '%'); },
+                    onbufferingcomplete: function () {
+                        if (token !== state.playbackToken) return;
+                        clearPlaybackTimeout();
+                        var playerState = 'unknown';
+                        try {
+                            playerState = avplay.getState();
+                        } catch (error) {
+                            console.warn('[playback] AVPlay state unavailable', error);
+                        }
+                        playbackLog('playing', ch, playerState);
+                        updatePlayPauseButton();
+                        startDvrMonitoring();
+                    },
+                    onstreamcompleted: function () {
+                        if (token !== state.playbackToken) return;
+                        playbackLog('completed', ch);
+                    },
+                    onerror: function (error) {
+                        if (token !== state.playbackToken) return;
+                        console.error('[playback] AVPlay error', {
+                            channel: ch.name,
+                            url: playbackUrlForLog(ch.url),
+                            error: error
+                        });
+                        failPlayback('Unable to connect to this channel');
+                    },
+                    onevent: function (eventType, eventData) {
+                        playbackLog('event', ch, eventType + (eventData ? ': ' + eventData : ''));
+                    }
+                });
+                avplay.prepareAsync(function () {
+                    if (token !== state.playbackToken) return;
+                    clearPlaybackTimeout();
+                    playbackLog('prepared', ch);
+                    avplay.play();
+                    updatePlayPauseButton();
+                    startDvrMonitoring();
+                }, function (error) {
+                    if (token !== state.playbackToken) return;
+                    clearPlaybackTimeout();
+                    console.error('[playback] AVPlay prepare failed', {
+                        channel: ch.name,
+                        url: playbackUrlForLog(ch.url),
+                        error: error
+                    });
+                    failPlayback('This stream format may not be supported');
+                });
+                state.playbackTimeoutId = setTimeout(function () {
+                    if (token !== state.playbackToken) return;
+                    console.error('[playback] AVPlay timed out', {
+                        channel: ch.name,
+                        url: playbackUrlForLog(ch.url)
+                    });
+                    failPlayback('Playback timed out; try again');
+                }, PLAYBACK_TIMEOUT_MS);
+            } catch (error) {
+                console.error('[playback] AVPlay setup failed', error);
+                showToast('Unable to play this channel');
+                stopPlayback();
+            }
+        } else if (window.Hls && window.Hls.isSupported()) {
+            state.playerMode = 'hls.js';
+            videoPlayer.style.display = '';
+            playbackLog('load', ch);
+            state.hls = new window.Hls();
             state.hls.loadSource(ch.url);
             state.hls.attachMedia(videoPlayer);
-            state.hls.on(Hls.Events.MANIFEST_PARSED, function () { videoPlayer.play(); });
-            state.hls.on(Hls.Events.ERROR, function (event, data) {
+            state.hls.on(window.Hls.Events.MANIFEST_PARSED, function () {
+                videoPlayer.play().catch(function (error) {
+                    console.error('[playback] browser play failed', error);
+                    showToast('Unable to start playback');
+                });
+            });
+            state.hls.on(window.Hls.Events.ERROR, function (event, data) {
                 console.error('HLS.js error:', data);
                 if (!data.fatal) return;
-                if (data.type === Hls.ErrorTypes.NETWORK_ERROR) state.hls.startLoad();
-                else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) state.hls.recoverMediaError();
-                else showToast('This channel could not be played');
+                if (data.type === window.Hls.ErrorTypes.NETWORK_ERROR) state.hls.startLoad();
+                else if (data.type === window.Hls.ErrorTypes.MEDIA_ERROR) state.hls.recoverMediaError();
+                else showToast('This stream format may not be supported');
             });
         } else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
+            state.playerMode = 'native-video';
+            videoPlayer.style.display = '';
+            playbackLog('load', ch);
             videoPlayer.src = ch.url;
-            videoPlayer.addEventListener('loadedmetadata', function () { videoPlayer.play(); }, { once: true });
+            videoPlayer.addEventListener('loadedmetadata', function () {
+                videoPlayer.play().catch(function (error) {
+                    console.error('[playback] native video play failed', error);
+                    showToast('Unable to start playback');
+                });
+            }, { once: true });
         } else {
-            showToast('HLS is not supported on this device');
+            showToast('This device does not support this stream');
         }
 
         showOverlay();
@@ -1040,28 +1446,134 @@ document.addEventListener('DOMContentLoaded', function () {
         toggleFavorite(state.nowPlaying);
     });
 
-    Focus.zones.playerFavorite = {
-        getMatrix: function () { return [[document.getElementById('favoriteBtn')]]; }
+    document.getElementById('rewindBtn').addEventListener('click', function () {
+        seekPlayback(-SEEK_STEPS_MS[state.seekStepIndex]);
+    });
+
+    document.getElementById('fastForwardBtn').addEventListener('click', function () {
+        seekPlayback(SEEK_STEPS_MS[state.seekStepIndex]);
+    });
+
+    document.getElementById('goLiveBtn').addEventListener('click', goLive);
+
+    document.getElementById('seekStepBtn').addEventListener('click', function () {
+        state.seekStepIndex = (state.seekStepIndex + 1) % SEEK_STEPS_MS.length;
+        document.getElementById('seekStepLabel').textContent = 'Step ' + SEEK_STEP_LABELS[state.seekStepIndex];
+        showToast('Seek step: ' + SEEK_STEP_LABELS[state.seekStepIndex]);
+        showOverlay();
+    });
+
+    document.getElementById('timelineBtn').addEventListener('click', function (event) {
+        if (!state.dvr.available || !state.dvr.liveEdgeMs) return;
+        var rect = event.currentTarget.getBoundingClientRect();
+        var ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+        var targetMs = state.dvr.earliestMs + ratio * (state.dvr.liveEdgeMs - state.dvr.earliestMs);
+        seekPlayback(targetMs - state.dvr.positionMs);
+    });
+
+    document.getElementById('playPauseBtn').addEventListener('click', function () {
+        togglePlayPause();
+    });
+
+    Focus.zones.playerControls = {
+        getMatrix: function () {
+            return [[
+                document.getElementById('rewindBtn'),
+                document.getElementById('fastForwardBtn'),
+                document.getElementById('playPauseBtn'),
+                document.getElementById('goLiveBtn'),
+                document.getElementById('seekStepBtn'),
+                document.getElementById('favoriteBtn')
+            ], [document.getElementById('timelineBtn')]];
+        },
+        onEdge: function (dir) {
+            if (dir === 'down' && Focus.row === 0) Focus.setZone('playerControls', 1, 0);
+            if (dir === 'up' && Focus.row === 1) Focus.setZone('playerControls', 0, 0);
+        }
     };
 
     function showOverlay() {
         var overlay = document.getElementById('playerOverlay');
         overlay.classList.add('visible');
-        Focus.setZone('playerFavorite', 0, 0);
+        Focus.setZone('playerControls', 0, 0);
         if (state.overlayTimeoutId) clearTimeout(state.overlayTimeoutId);
         state.overlayTimeoutId = setTimeout(function () { overlay.classList.remove('visible'); }, OVERLAY_HIDE_MS);
     }
 
     function togglePlayPause() {
-        if (videoPlayer.paused) videoPlayer.play(); else videoPlayer.pause();
+        if (state.playerMode === 'AVPlay' && state.avplay) {
+            try {
+                if (state.avplay.getState() === 'PLAYING') state.avplay.pause();
+                else state.avplay.play();
+            } catch (error) {
+                console.error('[playback] AVPlay pause/play failed', error);
+            }
+        } else if (videoPlayer.paused) videoPlayer.play(); else videoPlayer.pause();
+        updatePlayPauseButton();
         showOverlay();
     }
 
-    function exitPlayerToGrid() {
+    function updatePlayPauseButton() {
+        var icon = document.getElementById('playPauseIcon');
+        var label = document.getElementById('playPauseLabel');
+        var playing = false;
+        try {
+            playing = state.playerMode === 'AVPlay' && state.avplay ?
+                state.avplay.getState() === 'PLAYING' : !videoPlayer.paused;
+        } catch (error) {
+            playing = false;
+        }
+        icon.textContent = playing ? '\u275A\u275A' : '\u25B6';
+        label.textContent = playing ? 'Pause' : 'Play';
+    }
+
+    function clearPlaybackTimeout() {
+        if (state.playbackTimeoutId) {
+            clearTimeout(state.playbackTimeoutId);
+            state.playbackTimeoutId = null;
+        }
+    }
+
+    function stopPlayback() {
+        state.playbackToken++;
+        clearPlaybackTimeout();
+        resetDvrState();
         if (state.hls) { state.hls.destroy(); state.hls = null; }
+        if (state.avplay) {
+            try {
+                var avplayState = state.avplay.getState();
+                if (avplayState === 'PREPARED' || avplayState === 'PLAYING' || avplayState === 'PAUSED') {
+                    state.avplay.stop();
+                }
+            } catch (error) {
+                console.error('[playback] AVPlay stop failed', error);
+            }
+            try {
+                state.avplay.close();
+            } catch (error) {
+                console.error('[playback] AVPlay close failed', error);
+            }
+            state.avplay = null;
+        }
+        state.playerMode = null;
+        document.getElementById('screen-player').classList.remove('avplay-active');
+        document.getElementById('avplayObject').style.display = 'none';
+        videoPlayer.style.display = '';
+        videoPlayer.pause();
         videoPlayer.removeAttribute('src');
         videoPlayer.load();
-        switchToScreen('screen-grid');
+    }
+
+    function exitPlayerToGrid() {
+        stopPlayback();
+        var returnScreen = state.previousScreen || 'screen-grid';
+        if (returnScreen === 'screen-category-channels') {
+            showScreen(returnScreen);
+            document.getElementById('navCategories').classList.add('active');
+            Focus.setZone('categoryChannelsGrid', 0, 0);
+        } else {
+            switchToScreen(returnScreen);
+        }
     }
 
     // ==========================================================================
@@ -1077,6 +1589,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         if (document.getElementById('screen-settings').classList.contains('active')) { switchToScreen('screen-grid'); return; }
         if (document.getElementById('screen-donate').classList.contains('active')) { switchToScreen('screen-grid'); return; }
+        if (document.getElementById('screen-my-channels').classList.contains('active')) { switchToScreen('screen-grid'); return; }
         if (document.getElementById('screen-categories').classList.contains('active')) { switchToScreen('screen-grid'); return; }
         showConfirm('Are you sure you want to exit the app?', 'Exit', function () {
             tizen.application.getCurrentApplication().exit();
@@ -1090,7 +1603,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // ==========================================================================
     var KEYCODE = {
         LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, ENTER: 13, BACK: 10009,
-        CH_UP: 427, CH_DOWN: 428, MEDIA_PLAY_PAUSE: 10252
+        CH_UP: 427, CH_DOWN: 428, MEDIA_REWIND: 412,
+        MEDIA_FAST_FORWARD: 417, MEDIA_PLAY_PAUSE: 10252
     };
 
     document.addEventListener('keydown', function (event) {
@@ -1104,16 +1618,37 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-        switch (event.keyCode) {
+        var keyCode = event.keyCode;
+        if (event.key === 'Back') keyCode = KEYCODE.BACK;
+        if (event.key === 'MediaPlayPause') keyCode = KEYCODE.MEDIA_PLAY_PAUSE;
+        if (event.key === 'ChannelUp') keyCode = KEYCODE.CH_UP;
+        if (event.key === 'ChannelDown') keyCode = KEYCODE.CH_DOWN;
+        if (event.key === 'MediaRewind') keyCode = KEYCODE.MEDIA_REWIND;
+        if (event.key === 'MediaFastForward') keyCode = KEYCODE.MEDIA_FAST_FORWARD;
+
+        switch (keyCode) {
             case KEYCODE.UP: Focus.move('up'); break;
             case KEYCODE.DOWN: Focus.move('down'); break;
-            case KEYCODE.LEFT: Focus.move('left'); break;
-            case KEYCODE.RIGHT: Focus.move('right'); break;
+            case KEYCODE.LEFT:
+                if (onPlayer && Focus.currentZone === 'playerControls' && Focus.row === 1) seekPlayback(-SEEK_STEPS_MS[state.seekStepIndex]);
+                else Focus.move('left');
+                break;
+            case KEYCODE.RIGHT:
+                if (onPlayer && Focus.currentZone === 'playerControls' && Focus.row === 1) seekPlayback(SEEK_STEPS_MS[state.seekStepIndex]);
+                else Focus.move('right');
+                break;
             case KEYCODE.ENTER: Focus.select(); break;
             case KEYCODE.BACK: handleBack(); break;
             case KEYCODE.CH_UP: if (onPlayer) zapChannel(1); break;
             case KEYCODE.CH_DOWN: if (onPlayer) zapChannel(-1); break;
             case KEYCODE.MEDIA_PLAY_PAUSE: if (onPlayer) togglePlayPause(); break;
+            case KEYCODE.MEDIA_REWIND: if (onPlayer) seekPlayback(-SEEK_STEPS_MS[state.seekStepIndex]); break;
+            case KEYCODE.MEDIA_FAST_FORWARD: if (onPlayer) seekPlayback(SEEK_STEPS_MS[state.seekStepIndex]); break;
+        }
+        if (keyCode === KEYCODE.BACK || keyCode === KEYCODE.CH_UP ||
+            keyCode === KEYCODE.CH_DOWN || keyCode === KEYCODE.MEDIA_PLAY_PAUSE ||
+            keyCode === KEYCODE.MEDIA_REWIND || keyCode === KEYCODE.MEDIA_FAST_FORWARD) {
+            event.preventDefault();
         }
     });
 

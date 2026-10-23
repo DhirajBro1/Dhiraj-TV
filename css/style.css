@@ -137,7 +137,7 @@ button {
 	position: relative;
 	width: 100%;
 	height: 420px;
-	background: #0a0a0a;
+	background: radial-gradient(circle at 78% 42%, #32152a 0%, #160d19 26%, #080808 65%);
 	overflow: hidden;
 }
 
@@ -150,7 +150,7 @@ button {
 	background-repeat: no-repeat;
 	background-position: center;
 	background-size: cover;
-	opacity: 0.85;
+	opacity: 0;
 }
 
 .hero-gradient {
@@ -160,15 +160,50 @@ button {
 	bottom: 0;
 	left: 0;
 	background: linear-gradient(90deg, #000 15%, rgba(0, 0, 0, 0.65) 45%,
-		rgba(0, 0, 0, 0.15) 75%),
+		rgba(0, 0, 0, 0.05) 75%),
 		linear-gradient(0deg, #000 0%, rgba(0, 0, 0, 0) 40%);
 }
 
 .hero-content {
 	position: absolute;
 	left: 72px;
-	bottom: 56px;
+	bottom: 52px;
 	max-width: 900px;
+	z-index: 2;
+}
+
+.brand-lockup {
+	display: flex;
+	align-items: center;
+	margin-bottom: 28px;
+}
+
+.brand-mark {
+	width: 58px;
+	height: 58px;
+	margin-right: 16px;
+	border-radius: 16px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: linear-gradient(135deg, #ff416c, #e31c3d 58%, #791c5b);
+	box-shadow: 0 10px 30px rgba(227, 28, 61, 0.3);
+	font-size: 36px;
+	font-weight: 800;
+	font-style: italic;
+}
+
+.brand-name {
+	font-size: 24px;
+	font-weight: 700;
+	letter-spacing: 3px;
+}
+
+.brand-caption {
+	margin-top: 4px;
+	color: #a9a1a6;
+	font-size: 12px;
+	letter-spacing: 2px;
 }
 
 .hero-badge {
@@ -192,6 +227,52 @@ button {
 .hero-subtitle {
 	font-size: 22px;
 	color: #c7c7c7;
+}
+
+.hero-browse-btn {
+	display: flex;
+	align-items: center;
+	margin-top: 28px;
+	padding: 14px 22px;
+	border: 2px solid #e31c3d;
+	border-radius: 999px;
+	background: #e31c3d;
+	font-size: 19px;
+	font-weight: 600;
+}
+
+.hero-browse-btn span:first-child {
+	margin-right: 10px;
+	font-size: 16px;
+}
+
+.hero-browse-btn.focused,
+.hero-browse-btn:hover {
+	background: #ff416c;
+	border-color: #ff416c;
+}
+
+.hero-orbit {
+	position: absolute;
+	border: 1px solid rgba(255, 65, 108, 0.22);
+	border-radius: 50%;
+	transform: rotate(-25deg);
+	z-index: 1;
+}
+
+.hero-orbit-one {
+	width: 560px;
+	height: 260px;
+	right: 110px;
+	top: 58px;
+}
+
+.hero-orbit-two {
+	width: 440px;
+	height: 210px;
+	right: 170px;
+	top: 84px;
+	border-color: rgba(255, 255, 255, 0.1);
 }
 
 /* ==========================================================================
@@ -762,10 +843,26 @@ keyframes blink { 50% {
 	background: #000000;
 }
 
+#screen-player.avplay-active {
+	background: transparent;
+}
+
+#avplayObject {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 1920px;
+	height: 1080px;
+	background: transparent;
+	z-index: 0;
+}
+
 #videoPlayer {
+	position: relative;
 	width: 100%;
 	height: 100%;
 	background: #000;
+	z-index: 0;
 }
 
 .player-overlay {
@@ -777,11 +874,14 @@ keyframes blink { 50% {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
+	flex-direction: column;
+	align-items: stretch;
 	padding: 56px 72px;
 	background: linear-gradient(180deg, rgba(0, 0, 0, 0.8) 0%,
 		rgba(0, 0, 0, 0) 30%);
 	opacity: 0;
 	pointer-events: none;
+	z-index: 1;
 	transition: opacity 0.25s ease;
 }
 
@@ -792,6 +892,10 @@ keyframes blink { 50% {
 .now-playing {
 	display: flex;
 	align-items: center;
+}
+
+.player-overlay .now-playing {
+	align-self: flex-start;
 }
 
 .channel-logo {
@@ -825,6 +929,84 @@ keyframes blink { 50% {
 	border: 2px solid #262626;
 	color: #d8d8d8;
 	flex-shrink: 0;
+}
+
+.player-actions {
+	display: flex;
+	align-items: center;
+	align-self: center;
+	margin-top: auto;
+	margin-bottom: 22px;
+}
+
+.player-control-btn {
+	display: flex;
+	align-items: center;
+	font-size: 22px;
+	padding: 16px 24px;
+	margin-right: 12px;
+	border-radius: 999px;
+	background: #141414;
+	border: 2px solid #262626;
+	color: #d8d8d8;
+	flex-shrink: 0;
+}
+
+.player-control-btn span:first-child {
+	font-size: 26px;
+	margin-right: 10px;
+}
+
+.player-timeline {
+	width: 100%;
+	flex-shrink: 0;
+}
+
+.timeline-track {
+	position: relative;
+	display: block;
+	width: 100%;
+	height: 18px;
+	background: #3a3a3a;
+	border: 2px solid #777;
+	border-radius: 12px;
+	overflow: hidden;
+	text-align: left;
+}
+
+.timeline-track:disabled {
+	opacity: 0.55;
+}
+
+.timeline-fill {
+	display: block;
+	width: 0;
+	height: 100%;
+	background: #e31c3d;
+}
+
+.timeline-live-marker {
+	position: absolute;
+	top: 0;
+	right: 0;
+	width: 4px;
+	height: 100%;
+	background: #ffffff;
+}
+
+.timeline-labels {
+	display: flex;
+	justify-content: space-between;
+	margin-top: 10px;
+	font-size: 18px;
+	color: #d0d0d0;
+}
+
+.catchup-status {
+	margin-top: 8px;
+	text-align: center;
+	font-size: 16px;
+	color: #8a8a8a;
 }
 
 .favorite-btn #favoriteIcon {

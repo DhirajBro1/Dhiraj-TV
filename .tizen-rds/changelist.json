@@ -1,0 +1,67 @@
+{
+  "projectDir": "/home/dhiraj/Desktop/Projects/TV_app/TVapp",
+  "deploys": {
+    "next": [
+      {
+        "path": "Debug/projects/TVapp/noun-live-tv-3548799.png",
+        "type": "delete"
+      },
+      {
+        "path": "Debug/projects/TVapp/playlists/index.country.m3u",
+        "type": "delete"
+      },
+      {
+        "path": "Debug/projects/TVapp/index.html",
+        "type": "modify"
+      },
+      {
+        "path": "Debug/projects/TVapp/js/main.js",
+        "type": "modify"
+      },
+      {
+        "path": "Debug/projects/TVapp/README.md",
+        "type": "delete"
+      },
+      {
+        "path": "Debug/projects/TVapp/tools/validate-playlist.js",
+        "type": "delete"
+      },
+      {
+        "path": "Debug/projects/TVapp/css/style.css",
+        "type": "modify"
+      },
+      {
+        "path": "Debug/projects/TVapp/icon.png",
+        "type": "delete"
+      },
+      {
+        "path": "Debug/projects/TVapp/playlists",
+        "type": "add"
+      },
+      {
+        "path": "Debug/projects/TVapp/css",
+        "type": "add"
+      },
+      {
+        "path": "Debug/projects/TVapp/images",
+        "type": "add"
+      },
+      {
+        "path": "Debug/projects/TVapp/js",
+        "type": "add"
+      },
+      {
+        "path": "Debug/projects/TVapp/tools",
+        "type": "add"
+      },
+      {
+        "path": "Debug/projects/TVapp/.gitignore",
+        "type": "delete"
+      },
+      {
+        "path": "Debug/projects/TVapp/config.xml",
+        "type": "add"
+      }
+    ]
+  }
+}

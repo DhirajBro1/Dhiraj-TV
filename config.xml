@@ -10,10 +10,14 @@
 	<tizen:metadata
 		key="http://tizen.org/metadata/app_ui_type/base_screen_resolution"
 		value="extensive" />
-	<name>TVapp</name>
+	<tizen:content-security-policy>
+		default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: blob:;
+		object-src 'self';
+		media-src * data: blob:;
+	</tizen:content-security-policy>
+	<name>Dhiraj TV</name>
 	<tizen:privilege name="http://tizen.org/privilege/internet" />
 	<tizen:privilege name="http://tizen.org/privilege/tv.inputdevice" />
-	<tizen:privilege name="http://tizen.org/privilege/internet" />
 	<tizen:privilege name="http://developer.samsung.com/privilege/productinfo" />
 	<access origin="*" subdomains="true" />
 	<tizen:allow-navigation>*</tizen:allow-navigation>

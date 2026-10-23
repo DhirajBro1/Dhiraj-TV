@@ -1,0 +1,48 @@
+{
+  "projectDir": "/home/dhiraj/Desktop/Projects/TV_app/TVapp",
+  "timestamp": "2026-10-22T07:55:39.200Z",
+  "hashAlgorithm": "xxh3-128",
+  "input": {
+    "config.xml": {
+      "hash": "ac55f94e8745d4ff440cb09b6d043e6d"
+    },
+    "noun-live-tv-3548799.png": {
+      "hash": "9ef8345c0bd95d735125074b58f15100"
+    },
+    "index.html": {
+      "hash": "06db652da91718e8bbbe2ab88cc9d3f0"
+    },
+    "js/main.js": {
+      "hash": "3843284374d37c2fa8c88efbfc34e1ab"
+    },
+    "README.md": {
+      "hash": "c5f88ce60e93d11f2515a8759722ad00"
+    },
+    "tools/validate-playlist.js": {
+      "hash": "1ee4d69f00cf1eafebc5f6ea99cfd162"
+    },
+    "css/style.css": {
+      "hash": "83543b4f24b5c38d5e80524a6b87fb13"
+    },
+    "playlists/index.country.m3u": {
+      "hash": "1cdb3c2fbc98cf1fd8aa1f5ad92a11f7"
+    }
+  },
+  "output": {
+    "Debug/projects/TVapp/js/main.js": {
+      "hash": "3843284374d37c2fa8c88efbfc34e1ab"
+    },
+    "Debug/projects/TVapp/css/style.css": {
+      "hash": "83543b4f24b5c38d5e80524a6b87fb13"
+    },
+    "Debug/projects/TVapp/config.xml": {
+      "hash": "ac55f94e8745d4ff440cb09b6d043e6d"
+    },
+    "Debug/projects/TVapp/index.html": {
+      "hash": "06db652da91718e8bbbe2ab88cc9d3f0"
+    },
+    "Debug/projects/TVapp/README.md": {
+      "hash": "c5f88ce60e93d11f2515a8759722ad00"
+    }
+  }
+}
